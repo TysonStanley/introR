@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Introduction to The Tidyverse</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Tyson S. Barrett" />
+    <link rel="stylesheet" href="pres.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Introduction to The Tidyverse
+## 🤓
+### Tyson S. Barrett
+
+---
+
+
+
+
+# Introduction
+
+## The Newest and Brightest
+
+![](Figures/Rstats_logo.png)
+
+
+---
+
+# The Newest and Brightest
+### Tidyverse
+
+.pull-left[
+* In order to manipulate your data in the cleanest, most up-to-date manner, we are going to be using the "tidyverse" group of methods. 
+* The tidyverse is a group of packages that provide a simple syntax that can do many basic (and complex) data manipulating. 
+* The group of packages can be downloaded in the packages panel
+]
+
+.pull-right[
+
+After downloading it, simply use:
+
+```r
+library(tidyverse)
+```
+
+```
+── Attaching packages ──────────────────────────────────────────────────────────────── tidyverse 1.3.0 ──
+```
+
+```
+✓ ggplot2 3.3.2     ✓ purrr   0.3.4
+✓ tibble  3.0.1     ✓ dplyr   1.0.0
+✓ tidyr   1.1.0     ✓ stringr 1.4.0
+✓ readr   1.3.1     ✓ forcats 0.5.0
+```
+
+```
+Warning: package 'ggplot2' was built under R version 3.6.2
+```
+
+```
+Warning: package 'tibble' was built under R version 3.6.2
+```
+
+```
+Warning: package 'tidyr' was built under R version 3.6.2
+```
+
+```
+Warning: package 'purrr' was built under R version 3.6.2
+```
+
+```
+Warning: package 'dplyr' was built under R version 3.6.2
+```
+
+```
+── Conflicts ─────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+x dplyr::filter() masks stats::filter()
+x dplyr::lag()    masks stats::lag()
+```
+to unload all the functions!
+
+]
+
+---
+
+# Tidyverse
+
+Note that when we loaded `tidyverse` it loaded 6 packages and told you of "conflicts". These conflicts are where two or more loaded packages have the same function in them. The last loaded package is the one that `R` will use by default. For example, if we loaded two packages--`awesome` and `amazing`--and both had the function--`make_really_great` and we loaded `awesome` and then `amazing` as so:
+
+
+```r
+library(awesome)
+library(amazing)
+```
+
+`R` will automatically use the function from `amazing`. 
+
+---
+
+# Conflicts
+
+We can still access the `awesome` version of the function (because even though the name is the same, they won't necessarily do the same things for you). We can do this by:
+
+
+```r
+awesome::make_really_great(arg)
+```
+
+That's a bit of an aside, but know that you can always get at a function even if it is "masked" from your current session.
+
+---
+
+# Tidy Methods
+
+.pull-left[
+## The Tidy Data Way
+
+I'm introducing this to you for a couple reasons.
+
+1. It simplifies the code and makes the code more readable. As Mr. Wickham says, **there are always at least two collaborators on any project: you and future you.**
+2. It is the cutting edge. The most influential individuals in the `R` world, including the makers and maintainers of `RStudio`, use these methods and syntax.
+
+The majority of what you'll need to do with data as a researcher will be covered by these functions. 
+]
+
+.pull-right[
+## Methods for Tidying
+There are several methods that help tidy up your data:
+
+1. Piping
+2. Selecting and Filtering
+3. Grouping and Summarizing
+4. Reshaping
+5. Joining (merging)
+
+To help illustrate each aspect, we are going to use real data from the National Health and Nutrition Examiniation Survey (NHANES). I've provided this data [on my website](https://tysonstanley.github.io/assets/Data/NHANES.zip). I've cleaned it up somewhat already.
+]
+
+---
+
+# Example: NHANES
+
+## Import
+
+
+```r
+library(rio)
+dem_df &lt;- import("Data/NHANES_demographics_11.xpt")
+med_df &lt;- import("Data/NHANES_MedHeath_11.xpt")
+men_df &lt;- import("Data/NHANES_MentHealth_11.xpt")
+act_df &lt;- import("Data/NHANES_PhysActivity_11.xpt")
+```
+
+## Example: NHANES
+
+Now we have four separate, but related, data sets in memory:
+
+1. `dem_df` containing demographic information
+2. `med_df` containing medical health information
+3. `men_df` containing mental health information
+4. `act_df` containing activity level information
+
+---
+
+# Example: NHANES
+
+Since all of them have all-cap variable names, we are going to quickly change this with a little trick:
+
+
+```r
+names(dem_df) &lt;- tolower(names(dem_df))
+names(med_df) &lt;- tolower(names(med_df))
+names(men_df) &lt;- tolower(names(men_df))
+names(act_df) &lt;- tolower(names(act_df))
+```
+This takes the names of the data frame (on the right hand side), changes them to lower case and then reassigns them to the names of the data frame.[^names]
+
+Note that these are not particularly helpful names, but they are the names provided in the original data source. If you have questions about the data, visit [here](http://wwwn.cdc.gov/Nchs/Nhanes/Search/Nhanes11_12.aspx).
+
+---
+
+# Example: NHANES
+### We will now go through each aspect of the tidy way of working with data using these four data sets.
+
+---
+
+#  Piping
+
+.pull-left[
+![](Figures/pipe_logo.png)
+]
+
+.pull-right[
+
+```r
+me %&gt;% 
+  wake_up("8:00am") %&gt;% 
+  exercise(30, units = "minutes") %&gt;% 
+  shower(15, units = "minutes") %&gt;% 
+  eat_breakfast("toast") %&gt;% 
+  go_to_work("basement")
+```
+]
+
+---
+
+# Example: NHANES
+### Piping
+
+`%&gt;%` is the pipe "operator". It takes what is on the left hand side and puts it in the right hand side's function.
+
+
+```r
+dem_df %&gt;% summary()
+```
+
+So the above code takes the data frame `df` and puts it into the `summary` function. This does the same thing as `summary(dem_df)`. 
+
+In this simple case, it doesn't really make the code more readable, but in more complex situations it can really help.
+
+---
+
+# Select and Filter
+
+.pull-left[
+![](Figures/dplyr_logo.png)
+]
+
+.pull-right[
+In situations where you want or need to subset your data, two main forms exist:
+
+1. **Selecting Variables**
+2. **Filtering Rows**
+]
+
+---
+
+# Example: NHANES
+### Select and Filter
+
+**Selecting Variables**
+
+```r
+df[, c("var1", "var2")]
+df %&gt;%
+  select(var1, var2)
+```
+
+Here both do the same thing. The first, using `[`, is the "base R" way of selecting variables. The second, using the pipe, is the tidyverse way. Both work great so the choice is yours.
+
+---
+
+# Example: NHANES
+### Select and Filter
+
+**Filtering Rows**
+
+```r
+df[df$var1 == 1, ]
+df %&gt;%
+  filter(var1 == 1)
+```
+
+Again, both do the same thing. The first, using `[`, is the "base R" way of filtering rows so that you only keep the ones where "var1" in `df` is equal to `1`. Again, the second is the tidyverse way. Whichever you like you should use.
+
+---
+
+# Mutating Variables
+
+Anytime you see `mutate()` it means you are adding a new variable or modifying an existing one.
+
+
+```r
+data %&gt;% 
+  mutate(new_var = do_something_function(old_var))
+```
+
+
+```r
+data &lt;- data %&gt;% 
+  mutate(new_var = do_something_function(old_var))
+```
+
+
+---
+# Example: NHANES
+### Mutating
+
+
+```r
+## Our Grouping Variable as a factor
+dem_df &lt;- dem_df %&gt;%
+  mutate(citizen = factor(dmdcitzn))
+```
+
+---
+
+# Grouping and Summarizing
+
+A major aspect of analysis is comparing groups. Lucky for us, this is very simple in `R`. I call it the three step summary:
+
+1. Data
+2. Group by
+3. Summarize
+
+---
+
+# Example: NHANES
+### Grouping and Summarizing
+
+
+```r
+dem_df$citizen &lt;- factor(dem_df$dmdcitzn)
+dem_df %&gt;%                           ## 1. Data
+  group_by(citizen) %&gt;%              ## 2. Group by
+  summarize(N = n())                 ## 3. Summarize
+```
+
+```
+`summarise()` ungrouping output (override with `.groups` argument)
+```
+
+```
+# A tibble: 4 x 2
+  citizen     N
+  &lt;fct&gt;   &lt;int&gt;
+1 1        8685
+2 2        1040
+3 7          26
+4 &lt;NA&gt;        5
+```
+
+---
+
+# Example: NHANES
+### Grouping and Summarizing
+
+On the previous slide: 
+
+* The first column is the grouping variable and the second is the N (number of individuals) by group. 
+* We can quickly see that there are four levels, currently, to the citizen variable. 
+    * After some reading of the documentation we see that `1 = Citizen` and `2 = Not a Citizen`. 
+    * A value of `7` it turns out is a placeholder value for missing. 
+    * And finally we have an NA category. 
+        * It's unlikely that we want those to be included in any analyses, unless we are particularly interested in the missingness on this variable. 
+        * So let's do some simple cleaning to get this where we want it. To do this, we will use the `furniture` package.
+
+---
+
+# Example: NHANES
+### Grouping and Summarizing
+
+
+
+```r
+library(furniture)
+
+dem_df &lt;- dem_df %&gt;% 
+  ## Changes all 7's to NA's
+  mutate(citizen = washer(citizen, 7)) %&gt;% 
+  ## Changes all 2's to 0's
+  mutate(citizen = washer(citizen, 2, value=0))
+```
+
+Now, our citizen variable is cleaned, with `0` meaning not a citizen and `1` meaning citizen. Let's rerun the code from above with the three step summary:
+
+---
+
+# Example: NHANES
+### Grouping and Summarizing
+
+
+```r
+## Three step summary:
+dem_df %&gt;%                           ## 1. Data
+  group_by(citizen) %&gt;%              ## 2. Group by
+  summarize(N = n())                 ## 3. Summarize
+```
+
+```
+`summarise()` ungrouping output (override with `.groups` argument)
+```
+
+```
+# A tibble: 3 x 2
+  citizen     N
+  &lt;fct&gt;   &lt;int&gt;
+1 0        1040
+2 1        8685
+3 &lt;NA&gt;       31
+```
+
+Its clear that the majority of the subjects are citizens.
+
+---
+
+# Example: NHANES
+### Grouping and Summarizing
+
+*Check multiple variables at the same time:*
+
+
+```r
+## Three step summary:
+dem_df %&gt;%                           ## 1. Data
+  group_by(citizen) %&gt;%              ## 2. Group by
+  summarize(N = n(),                 ## 3. Summarize
+            Age = mean(ridageyr, na.rm=TRUE))                 
+```
+
+```
+`summarise()` ungrouping output (override with `.groups` argument)
+```
+
+```
+# A tibble: 3 x 3
+  citizen     N   Age
+  &lt;fct&gt;   &lt;int&gt; &lt;dbl&gt;
+1 0        1040  37.3
+2 1        8685  30.7
+3 &lt;NA&gt;       31  40.4
+```
+
+---
+
+# Example: NHANES
+### Grouping and Summarizing
+
+On previous slide:
+
+* The `n()` function gives us counts
+* The `mean()` function which, shockingly, gives us the mean. 
+    * Note that if there are `NA`'s in the variable, the mean (and most other functions like it) will give the result `NA`. 
+    * To have `R` ignore these, we tell the `mean` function to remove the `NA`'s when you compute this using `na.rm=TRUE`.
+
+---
+
+# Example: NHANES
+### Reshaping ("Pivoting")
+
+This is a big part of working with data. Unfortunately, it is also a difficult topic to understand without much practice at it. In general, two data formats exist:
+
+1. Wide form
+2. Long form
+
+Only when the data is cross-sectional and each individual is a row does this distinction not matter much. Otherwise, if there are multiple measures per individual, or there are multiple individuals per cluster, the distinction between wide and long is very important for modeling and visualization.
+
+---
+
+## Example: NHANES
+### Wide Form
+
+Wide form generally has one unit (i.e. individual) per row. This generally looks like:
+
+
+```
+   ID  Var_Time1  Var_Time2
+1   1 -0.6477407 0.40454558
+2   2 -0.1312466 0.50681235
+3   3  0.1434210 0.31162349
+4   4  0.3524039 0.51409390
+5   5  0.5380454 0.69446578
+6   6 -0.7044372 0.58184520
+7   7 -1.2396494 0.03626816
+8   8  2.7158700 0.08543001
+9   9 -0.7645193 0.28929439
+10 10 -0.6216876 0.72461196
+```
+
+Notice that each row has a unique ID. 
+
+.small[
+This format is common in the ANOVA family of analyses. These can be used when there are set time points that the individual is measured and each individual has the same number of time points. This is not always reasonable, but when it is, wide format works just fine. However, when these conditions don't hold, mixed effects modeling (i.e. multilevel modeling, hierarchical linear modeling) is particularly useful. In order to do mixed effects modeling, long format is required.
+]
+
+---
+
+# Example: NHANES
+### Long Form
+
+In contrast, long format has the lowest nested unit as a single row. This means that a single ID can span multiple rows, usually with a unique time point for each row as so:
+
+
+```
+  ID Time       Var
+1  1    1 0.9059516
+2  1    2 0.1475425
+3  1    3 0.1757346
+4  1    4 0.8269223
+5  2    1 0.1609868
+6  2    2 0.3549900
+7  3    1 0.6419453
+8  3    2 0.3096344
+9  3    3 0.3677466
+```
+
+Notice that a single ID spans multiple columns and that each row has only one time point. Here, time is nested within individuals making it the lowest unit. Therefore, each row corresponds to a single time point. Generally, this is the format we want for most modeling techniques and most visualizations.
+
+---
+
+# Quick Sidetrack from NHANES: Reshaping
+### Wide to Long
+
+With a fake data set, we'll go from wide to long...
+
+```r
+df_wide &lt;- data.frame("ID"=c(1:10), 
+                      "Var_Time1"=rnorm(10), 
+                      "Var_Time2"=runif(10))
+df_long &lt;- pivot_longer(df_wide, 
+                        cols = Var_Time1:Var_Time2, 
+                        names_to = "time",
+                        values_to = "value")
+df_long
+```
+
+```
+# A tibble: 20 x 3
+      ID time        value
+   &lt;int&gt; &lt;chr&gt;       &lt;dbl&gt;
+ 1     1 Var_Time1 -0.675 
+ 2     1 Var_Time2  0.460 
+ 3     2 Var_Time1 -0.335 
+ 4     2 Var_Time2  0.694 
+ 5     3 Var_Time1 -0.0162
+ 6     3 Var_Time2  0.617 
+ 7     4 Var_Time1  0.604 
+ 8     4 Var_Time2  0.351 
+ 9     5 Var_Time1  0.625 
+10     5 Var_Time2  0.0610
+11     6 Var_Time1 -1.01  
+12     6 Var_Time2  0.438 
+13     7 Var_Time1 -0.340 
+14     7 Var_Time2  0.786 
+15     8 Var_Time1 -0.570 
+16     8 Var_Time2  0.994 
+17     9 Var_Time1 -0.632 
+18     9 Var_Time2  0.0764
+19    10 Var_Time1  0.227 
+20    10 Var_Time2  0.403 
+```
+
+
+---
+
+# Quick Sidetrack from NHANES: Reshaping
+### Long to Wide
+
+Now we will go from long to wide using `spread()` from the same package.
+
+```r
+df_wide &lt;- pivot_wider(df_long, names_from = time, values_from = value)
+df_wide
+```
+
+```
+# A tibble: 10 x 3
+      ID Var_Time1 Var_Time2
+   &lt;int&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+ 1     1   -0.675     0.460 
+ 2     2   -0.335     0.694 
+ 3     3   -0.0162    0.617 
+ 4     4    0.604     0.351 
+ 5     5    0.625     0.0610
+ 6     6   -1.01      0.438 
+ 7     7   -0.340     0.786 
+ 8     8   -0.570     0.994 
+ 9     9   -0.632     0.0764
+10    10    0.227     0.403 
+```
+
+
+---
+
+# Joining (merging)
+
+*The final topic in the chapter is joining data sets.*
+
+We currently have 4 data sets that have mostly the same people in them but with different variables. One tells us about the demographics; another gives us information on mental health. We may have questions that ask whether a demographic characteristics is related to a mental health factor. This means we need to merge, or join, our data sets.
+
+Note that this is different than adding new rows but not new variables. Merging requires that we have at least some overlap of individuals in both data sets.
+
+---
+
+# Joining (merging)
+
+When we merge a data set, we combine them based on some ID variable(s). Here, this is simple since each individual is given a unique identifier in the variable `seqn`. Within the `dplyr` package there are four main joining functions: `inner_join`, `left_join`, `right_join` and `full_join`. Each join combines the data in slightly different ways. 
+
+---
+
+## Example: NHANES
+### Joining (merging)
+#### Inner Join
+
+Here, only those individuals that are in both data sets that you are combining will remain. So if person "A" is in data set 1 and not in data set 2 then he/she will not be included.
+
+
+```r
+inner_join(df1, df2, by="IDvariable")
+```
+
+---
+
+# Example: NHANES
+### Joining (merging)
+#### Left or Right Join
+
+This is similar to inner join but now if the individual is in data set 1 then `left_join` will keep them even if they aren't in data set 2. `right_join` means if they are in data set 2 then they will be kept whether or not they are in data set 1.
+
+
+```r
+left_join(df1, df2, by="IDvariable")   ## keeps all in df1
+right_join(df1, df2, by="IDvariable")  ## keeps all in df2
+```
+
+---
+
+# Example: NHANES
+### Joining (merging)
+#### Full Join
+
+This one simply keeps all individuals that are in either data set 1 or data set 2. 
+
+
+```r
+full_join(df1, df2, by="IDvariable")
+```
+
+Each of the left, right and full joins will have missing values placed in the variables where that individual wasn't found. For example, if person "A" was not in df2, then in a full join they would have missing values in the df1 variables.
+
+---
+
+# Example: NHANES
+
+For our NHANES example, we will use `full_join` to get all the data sets together. Note that in the code below we do all the joining in the same overall step. 
+
+
+```r
+df &lt;- dem_df %&gt;%
+  full_join(med_df, by="seqn") %&gt;%
+  full_join(men_df, by="seqn") %&gt;%
+  full_join(act_df, by="seqn")
+```
+
+So now `df` is the the joined data set of all four. We started with `dem_df` joined it with `med_df` by `seqn` then joined that joined data set with `men_df` by `seqn`, and so on.
+
+
+---
+
+# Conclusions
+
+## In This Chapter:
+* You have learned how to manipulate your data in several ways:
+    * Summarizing
+    * Reshaping
+    * Joining
+
+*For analyses in the later chapters, we will use this new* `df` *object that we concluded with containing NHANES data.*
+
+Also, you'll see that many of these methods apply to more than just manipulating data. As you learn one method, you'll begin to see how easily you can use it in other situations.
+
+---
+
+![](Figures/delicate_arch.jpg)
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
